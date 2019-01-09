@@ -23,5 +23,8 @@
     "express": "^4.16.4",
     "mongoose": "^5.4.1",
     "path": "^0.12.7"
+  },
+  "devDependencies": {
+    "morgan": "^1.9.1"
   }
 }

@@ -1,31 +1,78 @@
 const models = require('./../models');
-const client = require('./../../server');
 const db = require('mongoose');
-const NewsModel = db.model('News');
-// const db = client.db('todo');
-// const testModel = db.model('News');
+const News = db.model('News');
+
 module.exports = {
-    getNewsById: async (req, res) => {
-        console.log(req.params)
+    getAllNews: async (req, res) => {
         try {
-            await NewsModel.find({ _id: req.params.news_id }, (err, doc) => {
-                if (doc) res.send(doc)
-            })
+            const foundDoc = await News.find({}, (err, doc) => doc)
+            if (foundDoc) return res.send(foundDoc)
         } catch (e) {
-            res.send(e);
+            res.send(e.message);
+        }
+    },
+    getNewsById: async (req, res) => {
+        try {
+            const foundDoc = await News.find({ _id: req.params.news_id }, (err, doc) => doc)
+            if (foundDoc) return res.send(foundDoc)
+        } catch (e) {
+            res.send(e.message);
         }
     },
     createNews: async (req, res) => {
-        if (!(req.body.category && req.body.title && req.body.description && req.body.fullDescription)) {
-            return res.send('All keys is requrired!')
+        try {
+            const foundDoc = await News.find({ description: req.body.description }, (err, doc) => doc)
+            if (foundDoc.length > 0) return res.send('Description should be unique!')
+        } catch (e) {
+            return res.send(e.message)
         }
-        if(req.body.category.length == 0) return res.send('Category is requrired!')
+
+        try {
+            const foundDoc = await News.find({ fullDescription: req.body.fullDescription }, (err, doc) => doc)
+            if (foundDoc.length > 0) return res.send('Full description should be unique!')
+        } catch (e) {
+            return res.send(e.message)
+        }
 
         const newItem = req.body;
-        newItem['publishedAt'] = Date.now();
-        await NewsModel.create(newItem, (err, doc) => {
-            if (err) throw err;
-            res.send(doc);
-        });
+        newItem['edited'] = false;
+        try {
+            return await News.create(newItem, (err, doc) => {
+                if (err) return res.send(err.message)
+                if (doc) return res.send(doc);
+            });
+        } catch (e) {
+            return res.send(e.message)
+        }
+    },
+    editNews: async (req, res) => {
+        const id = req.body._id;
+        if (!id) return res.send('Id is required!')
+        const updatedItem = req.body;
+        updatedItem['edited'] = true;
+        updatedItem['publishedAt'] = Date.now();
+
+        try {
+            return await News.findOneAndUpdate({ _id: id }, updatedItem, { new: true }, (err, doc) => {
+                if (err) return res.send(err.message)
+                if (doc) return res.send(doc);
+            })
+        } catch (e) {
+            return res.send(e.message)
+        }
+    },
+    deleteNews: async (req, res) => {
+        const id = req.params.news_id;
+        if(!id) return res.send('Id is required!');
+        
+        try {
+            return await News.findOneAndRemove({ _id: id }, (err, doc) => {
+                console.log(doc);
+                if (err) return res.send(err.message)
+                if (doc) return res.send('Successfully deleted!');
+            })
+        } catch (e) {
+            return res.send(e.message)
+        }
     }
 }

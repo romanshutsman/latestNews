@@ -5,12 +5,14 @@ const cors = require('cors');
 const path = require('path');
 const routes = require('./helpers/routes');
 const conDb = require('./helpers/connectDb');
+const morgan = require('morgan')
 
 let app = express();
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cors());
+app.use(morgan(':method :url :status - :response-time ms'));
 app.use(express.static(path.join(__dirname + '/public')));
 routes(app);
 
